@@ -1,0 +1,5 @@
+{
+  "name": "Aplikasi Pelaporan Penjualan Host Live",
+  "description": "Aplikasi dasbor untuk melacak dan melaporkan data penjualan dari host live. Pengguna dapat masuk, melihat ringkasan penjualan, grafik, dan detail transaksi, serta menambahkan catatan penjualan baru. Aplikasi ini terintegrasi dengan Firebase untuk autentikasi dan penyimpanan data real-time.",
+  "requestFramePermissions": []
+}
