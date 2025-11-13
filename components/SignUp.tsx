@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+// FIX: Use v8-compatible auth method
+// import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../services/firebase';
 
 interface SignUpProps {
@@ -26,7 +28,8 @@ const SignUp: React.FC<SignUpProps> = ({ onNavigateToLogin }) => {
     }
     setIsLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      // FIX: Use auth.createUserWithEmailAndPassword (v8 compat) instead of createUserWithEmailAndPassword(auth,...) (v9 modular)
+      await auth.createUserWithEmailAndPassword(email, password);
       // User will be automatically logged in and redirected by the onAuthStateChanged listener in App.tsx
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+// FIX: Use v8-compatible firestore methods by removing v9 modular imports.
+// import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { Akun } from '../types';
 
@@ -37,11 +38,12 @@ const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, accountToE
     setIsLoading(true);
     try {
       const accountData = { name };
+      // FIX: Use v8-compatible syntax for document writes.
       if (isEditing) {
-        const accountRef = doc(db, 'AKUN', accountToEdit.id);
-        await updateDoc(accountRef, accountData);
+        const accountRef = db.collection('AKUN').doc(accountToEdit.id);
+        await accountRef.update(accountData);
       } else {
-        await addDoc(collection(db, 'AKUN'), accountData);
+        await db.collection('AKUN').add(accountData);
       }
       onClose();
     } catch (err: any) {

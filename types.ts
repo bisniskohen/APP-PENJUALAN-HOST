@@ -1,4 +1,9 @@
-import { Timestamp } from 'firebase/firestore';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
+
+// FIX: Use v8-compatible Timestamp type.
+export type Timestamp = firebase.firestore.Timestamp;
+
 
 export interface User {
   uid: string;
@@ -8,7 +13,6 @@ export interface User {
 export interface Host {
   id: string;
   name: string;
-  durasiHarianWajib: number;
 }
 
 export interface Akun {
@@ -39,19 +43,20 @@ export interface Target {
   hadiah: string;
 }
 
-export interface PenguranganJamKerja {
-    id: string;
-    hostId: string;
-    hostName?: string;
-    tanggal: Timestamp;
-    jumlahJam: number;
-    keterangan: string;
-}
-
 // FIX: Add and export the missing 'DurasiWajib' interface.
 export interface DurasiWajib {
   id: string;
   month: number;
   year: number;
   durasiHarian: number;
+}
+
+// FIX: Add and export the missing 'PenguranganJamKerja' interface.
+export interface PenguranganJamKerja {
+  id: string;
+  hostId: string;
+  hostName?: string;
+  tanggal: Timestamp;
+  jumlahJam: number;
+  keterangan: string;
 }

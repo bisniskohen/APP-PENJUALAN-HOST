@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, doc, updateDoc, Timestamp } from 'firebase/firestore';
+// FIX: Use v8-compatible firebase for Timestamp and remove v9 modular imports.
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 import { db } from '../services/firebase';
 import { PenguranganJamKerja, Host } from '../types';
 
@@ -51,17 +53,19 @@ const PenguranganJamKerjaModal: React.FC<PenguranganJamKerjaModalProps> = ({ isO
 
     const penguranganData = {
         hostId,
-        tanggal: Timestamp.fromDate(new Date(tanggal)),
+        // FIX: Use v8-compatible Timestamp.
+        tanggal: firebase.firestore.Timestamp.fromDate(new Date(tanggal)),
         jumlahJam,
         keterangan,
     };
 
     try {
+      // FIX: Use v8-compatible syntax for document writes.
       if (isEditing) {
-        const penguranganRef = doc(db, 'PENGURANGAN_JAM_KERJA', penguranganToEdit.id);
-        await updateDoc(penguranganRef, penguranganData);
+        const penguranganRef = db.collection('PENGURANGAN_JAM_KERJA').doc(penguranganToEdit.id);
+        await penguranganRef.update(penguranganData);
       } else {
-        await addDoc(collection(db, 'PENGURANGAN_JAM_KERJA'), penguranganData);
+        await db.collection('PENGURANGAN_JAM_KERJA').add(penguranganData);
       }
       onClose();
     } catch (err: any) {

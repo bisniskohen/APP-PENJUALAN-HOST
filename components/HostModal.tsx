@@ -1,6 +1,8 @@
 
+
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+// FIX: Use v8-compatible firestore methods by removing v9 modular imports.
+// import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { Host } from '../types';
 
@@ -12,7 +14,6 @@ interface HostModalProps {
 
 const HostModal: React.FC<HostModalProps> = ({ isOpen, onClose, hostToEdit }) => {
   const [name, setName] = useState('');
-  const [durasiHarianWajib, setDurasiHarianWajib] = useState(8);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const isEditing = hostToEdit !== null;
@@ -21,10 +22,8 @@ const HostModal: React.FC<HostModalProps> = ({ isOpen, onClose, hostToEdit }) =>
     if (isOpen) {
         if (isEditing) {
             setName(hostToEdit.name);
-            setDurasiHarianWajib(hostToEdit.durasiHarianWajib || 8);
         } else {
             setName('');
-            setDurasiHarianWajib(8);
         }
         setError(null);
     }
@@ -33,19 +32,20 @@ const HostModal: React.FC<HostModalProps> = ({ isOpen, onClose, hostToEdit }) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!name.trim() || durasiHarianWajib <= 0) {
-      setError('Nama host dan durasi wajib harus diisi dengan benar.');
+    if (!name.trim()) {
+      setError('Nama host harus diisi dengan benar.');
       return;
     }
 
     setIsLoading(true);
     try {
-      const hostData = { name, durasiHarianWajib };
+      const hostData = { name };
+      // FIX: Use v8-compatible syntax for document writes.
       if (isEditing) {
-        const hostRef = doc(db, 'HOST', hostToEdit.id);
-        await updateDoc(hostRef, hostData);
+        const hostRef = db.collection('HOST').doc(hostToEdit.id);
+        await hostRef.update(hostData);
       } else {
-        await addDoc(collection(db, 'HOST'), hostData);
+        await db.collection('HOST').add(hostData);
       }
       onClose();
     } catch (err: any) {
@@ -78,19 +78,6 @@ const HostModal: React.FC<HostModalProps> = ({ isOpen, onClose, hostToEdit }) =>
                 required 
                 className="w-full bg-slate-700 border border-slate-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Masukkan nama host"
-            />
-          </div>
-          <div>
-            <label htmlFor="durasiHarianWajib" className="block text-sm font-medium text-slate-300 mb-1">Durasi Harian Wajib (Jam)</label>
-            <input 
-                type="number" 
-                id="durasiHarianWajib" 
-                value={durasiHarianWajib} 
-                onChange={e => setDurasiHarianWajib(parseInt(e.target.value, 10) || 0)} 
-                min="1"
-                required 
-                className="w-full bg-slate-700 border border-slate-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Contoh: 8"
             />
           </div>
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { doc, deleteDoc } from 'firebase/firestore';
+// FIX: Use v8-compatible firestore methods by removing v9 modular imports.
+// import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { Akun } from '../types';
 import AccountModal from './AccountModal';
@@ -40,7 +41,8 @@ const AccountManagement: React.FC<AccountManagementProps> = ({ akun }) => {
         if (!accountToDelete) return;
         try {
             setError(null);
-            await deleteDoc(doc(db, 'AKUN', accountToDelete.id));
+            // FIX: Use v8-compatible syntax for deleting a document.
+            await db.collection('AKUN').doc(accountToDelete.id).delete();
             handleCloseConfirm();
         } catch (err: any) {
             setError('Gagal menghapus akun.');

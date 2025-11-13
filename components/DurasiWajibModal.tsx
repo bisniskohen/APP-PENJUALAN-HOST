@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+// FIX: Use v8-compatible firestore methods by removing v9 modular imports.
+// import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { DurasiWajib } from '../types';
 
@@ -52,11 +53,12 @@ const DurasiWajibModal: React.FC<DurasiWajibModalProps> = ({ isOpen, onClose, du
     };
 
     try {
+      // FIX: Use v8-compatible syntax for document writes.
       if (isEditing) {
-        const durasiRef = doc(db, 'DURASI WAJIB', durasiWajibToEdit.id);
-        await updateDoc(durasiRef, durasiData);
+        const durasiRef = db.collection('DURASI WAJIB').doc(durasiWajibToEdit.id);
+        await durasiRef.update(durasiData);
       } else {
-        await addDoc(collection(db, 'DURASI WAJIB'), durasiData);
+        await db.collection('DURASI WAJIB').add(durasiData);
       }
       onClose();
     } catch (err: any) {

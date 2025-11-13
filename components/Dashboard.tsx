@@ -1,9 +1,12 @@
 
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { signOut } from 'firebase/auth';
-import { collection, onSnapshot, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
+// FIX: Use v8-compatible auth method
+// import { signOut } from 'firebase/auth';
+// FIX: Use v8-compatible firestore methods by removing v9 modular imports.
+// import { collection, onSnapshot, query, orderBy, doc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
-import { User, Sale, Host, Akun, Target, PenguranganJamKerja } from '../types';
+import { User, Sale, Host, Akun, Target } from '../types';
 import AddSaleModal from './AddSaleModal';
 import SalesChart from './SalesChart';
 import SalesTable from './SalesTable';
@@ -17,8 +20,6 @@ import TargetModal from './TargetModal';
 import TargetAchievementChart from './TargetAchievementChart';
 import HostSalesSummaryTable from './HostSalesSummaryTable';
 import AccountSalesSummaryTable from './AccountSalesSummaryTable';
-import PenguranganJamKerjaManagement from './PenguranganJamKerjaManagement';
-import PenguranganJamKerjaModal from './PenguranganJamKerjaModal';
 
 
 declare const jspdf: any;
@@ -34,7 +35,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [hosts, setHosts] = useState<Host[]>([]);
   const [akun, setAkun] = useState<Akun[]>([]);
   const [targets, setTargets] = useState<Target[]>([]);
-  const [penguranganJamKerja, setPenguranganJamKerja] = useState<PenguranganJamKerja[]>([]);
   const [loading, setLoading] = useState(true);
   const [activePage, setActivePage] = useState<Page>('penjualan');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -51,12 +51,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [isConfirmTargetDeleteOpen, setIsConfirmTargetDeleteOpen] = useState(false);
   const [targetToDelete, setTargetToDelete] = useState<Target | null>(null);
 
-  // State for Pengurangan Jam Kerja CRUD
-  const [isPenguranganModalOpen, setIsPenguranganModalOpen] = useState(false);
-  const [penguranganToEdit, setPenguranganToEdit] = useState<PenguranganJamKerja | null>(null);
-  const [isConfirmPenguranganDeleteOpen, setIsConfirmPenguranganDeleteOpen] = useState(false);
-  const [penguranganToDelete, setPenguranganToDelete] = useState<PenguranganJamKerja | null>(null);
-
   // State for Export dropdown
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -70,26 +64,31 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   // State for UI toggles
   const [isSalesTableExpanded, setIsSalesTableExpanded] = useState(true);
 
+  // State for bulk actions
+  const [selectedSaleIds, setSelectedSaleIds] = useState<Set<string>>(new Set());
+  const [isConfirmBulkDeleteOpen, setIsConfirmBulkDeleteOpen] = useState(false);
+
+
   useEffect(() => {
     setLoading(true);
-    const qHosts = query(collection(db, 'HOST'), orderBy('name'));
-    const unsubscribeHosts = onSnapshot(qHosts, (querySnapshot) => {
+    // FIX: Use v8-compatible syntax for Firestore queries.
+    const unsubscribeHosts = db.collection('HOST').orderBy('name').onSnapshot((querySnapshot) => {
         const hostsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Host));
         setHosts(hostsData);
     }, (error) => {
         console.error("Error fetching hosts: ", error);
     });
 
-    const qAkun = query(collection(db, 'AKUN'), orderBy('name'));
-    const unsubscribeAkun = onSnapshot(qAkun, (querySnapshot) => {
+    // FIX: Use v8-compatible syntax for Firestore queries.
+    const unsubscribeAkun = db.collection('AKUN').orderBy('name').onSnapshot((querySnapshot) => {
         const akunData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Akun));
         setAkun(akunData);
     }, (error) => {
         console.error("Error fetching accounts: ", error);
     });
 
-    const qSales = query(collection(db, 'DATA PENJUALAN'), orderBy('saleDate', 'desc'));
-    const unsubscribeSales = onSnapshot(qSales, (querySnapshot) => {
+    // FIX: Use v8-compatible syntax for Firestore queries.
+    const unsubscribeSales = db.collection('DATA PENJUALAN').orderBy('saleDate', 'desc').onSnapshot((querySnapshot) => {
         const salesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sale));
         setSales(salesData);
         setLoading(false); // Set loading to false after main data is fetched
@@ -98,22 +97,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         setLoading(false);
     });
     
-    const qTargets = query(collection(db, 'TARGET BULANAN'), orderBy('year', 'desc'), orderBy('month', 'desc'));
-    const unsubscribeTargets = onSnapshot(qTargets, (querySnapshot) => {
+    // FIX: Use v8-compatible syntax for Firestore queries.
+    // FIX: Removed server-side orderBy to prevent index error. Sorting is now done on the client.
+    const unsubscribeTargets = db.collection('TARGET BULANAN').onSnapshot((querySnapshot) => {
         const targetsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Target));
+        targetsData.sort((a, b) => {
+            if (a.year !== b.year) {
+                return b.year - a.year;
+            }
+            return b.month - a.month;
+        });
         setTargets(targetsData);
     }, (error) => {
         console.error("Error fetching targets: ", error);
     });
 
-    const qPengurangan = query(collection(db, 'PENGURANGAN_JAM_KERJA'), orderBy('tanggal', 'desc'));
-    const unsubscribePengurangan = onSnapshot(qPengurangan, (querySnapshot) => {
-        const penguranganData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PenguranganJamKerja));
-        setPenguranganJamKerja(penguranganData);
-    }, (error) => {
-        console.error("Error fetching work hour deductions: ", error);
-    });
-    
     const handleClickOutside = (event: MouseEvent) => {
       if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
         setIsExportMenuOpen(false);
@@ -126,18 +124,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         unsubscribeAkun();
         unsubscribeSales();
         unsubscribeTargets();
-        unsubscribePengurangan();
         document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  const penguranganJamKerjaWithHostName = useMemo(() => {
-    const hostMap = new Map(hosts.map(h => [h.id, h.name]));
-    return penguranganJamKerja.map(p => ({
-        ...p,
-        hostName: hostMap.get(p.hostId) || 'N/A'
-    }));
-  }, [penguranganJamKerja, hosts]);
 
   const filteredSales = useMemo(() => {
     const hostMap = new Map(hosts.map(h => [h.id, h.name]));
@@ -167,9 +156,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       }));
   }, [sales, hosts, akun, startDate, endDate, selectedHostId, selectedAkunId]);
     
-  const { totalOmset, totalSesi, hostTerbaik, rataRataOmset } = useMemo(() => {
+  const { totalOmset, totalSesi, hostTerbaik, rataRataOmsetHarian } = useMemo(() => {
     if (filteredSales.length === 0) {
-      return { totalOmset: 0, totalSesi: 0, hostTerbaik: '-', rataRataOmset: 0 };
+      return { totalOmset: 0, totalSesi: 0, hostTerbaik: '-', rataRataOmsetHarian: 0 };
     }
     const totalOmset = filteredSales.reduce((acc, sale) => acc + (sale.omsetAkhir - sale.omsetAwal), 0);
     const totalSesi = filteredSales.length;
@@ -189,9 +178,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         }
     }
     
-    const rataRataOmset = totalSesi > 0 ? totalOmset / totalSesi : 0;
+    const uniqueDays = new Set(filteredSales.map(sale => new Date(sale.saleDate.seconds * 1000).toDateString()));
+    const numberOfDays = uniqueDays.size > 0 ? uniqueDays.size : 1; // Avoid division by zero
+    const rataRataOmsetHarian = totalOmset / numberOfDays;
     
-    return { totalOmset, totalSesi, hostTerbaik: bestHost, rataRataOmset };
+    return { totalOmset, totalSesi, hostTerbaik: bestHost, rataRataOmsetHarian };
   }, [filteredSales]);
 
   // For Target Achievement Chart
@@ -241,28 +232,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           accountSummary[sale.akunId].totalNetTurnover += (sale.omsetAkhir - sale.omsetAwal);
           accountSummary[sale.akunId].totalDuration += sale.durasi;
       });
-
+      
       const hostSummaryData = Object.entries(hostSummary).map(([hostId, data]) => {
           const totalJamKerja = data.totalDuration / 60;
           
-          const hostData = hosts.find(h => h.id === hostId);
-          const durasiWajibHarian = hostData?.durasiHarianWajib || 0;
-          const totalJamWajibBruto = durasiWajibHarian * data.workDays.size;
-
-          const totalPengurangan = penguranganJamKerja
-              .filter(p => p.hostId === hostId && data.workDays.has(new Date(p.tanggal.seconds * 1000).toISOString().split('T')[0]))
-              .reduce((acc, curr) => acc + curr.jumlahJam, 0);
-
-          const totalJamWajibNetto = totalJamWajibBruto - totalPengurangan;
-          const totalLembur = totalJamKerja - totalJamWajibNetto;
-
           return {
               hostId,
               ...data,
               averageTurnover: data.totalSessions > 0 ? data.totalNetTurnover / data.totalSessions : 0,
               totalJamKerja,
-              totalJamWajib: totalJamWajibNetto,
-              totalLembur: Math.max(0, totalLembur),
           };
       }).sort((a,b) => b.totalNetTurnover - a.totalNetTurnover);
 
@@ -273,7 +251,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       })).sort((a,b) => b.totalNetTurnover - a.totalNetTurnover);
 
       return { hostSummaryData, accountSummaryData };
-  }, [filteredSales, hosts, penguranganJamKerja]);
+  }, [filteredSales]);
 
   const selectedHostName = useMemo(() => {
     if (!selectedHostId) return null;
@@ -307,13 +285,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     );
   }, [selectedHostId, selectedAkunId, selectedHostName, selectedAkunName]);
 
-  const handleLogout = () => signOut(auth);
+  // FIX: Use auth.signOut() (v8 compat) instead of signOut(auth) (v9 modular)
+  const handleLogout = () => auth.signOut();
 
   const resetFilters = () => {
     setStartDate('');
     setEndDate('');
     setSelectedHostId('');
     setSelectedAkunId('');
+    setSelectedSaleIds(new Set());
   };
 
   // Handlers for Sales CRUD
@@ -322,10 +302,54 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const handleConfirmDeleteSale = (sale: Sale) => { setSaleToDelete(sale); setIsConfirmSaleDeleteOpen(true); };
   const handleDeleteSale = async () => {
       if (saleToDelete) {
-          await deleteDoc(doc(db, 'DATA PENJUALAN', saleToDelete.id));
+          // FIX: Use v8-compatible syntax for deleting a document.
+          await db.collection('DATA PENJUALAN').doc(saleToDelete.id).delete();
           setIsConfirmSaleDeleteOpen(false);
           setSaleToDelete(null);
       }
+  };
+  
+    // Handlers for selection
+  const handleSelectSale = (saleId: string) => {
+    setSelectedSaleIds(prevSelected => {
+      const newSelected = new Set(prevSelected);
+      if (newSelected.has(saleId)) {
+        newSelected.delete(saleId);
+      } else {
+        newSelected.add(saleId);
+      }
+      return newSelected;
+    });
+  };
+
+  const handleSelectAllSales = () => {
+    if (selectedSaleIds.size === filteredSales.length) {
+      setSelectedSaleIds(new Set());
+    } else {
+      setSelectedSaleIds(new Set(filteredSales.map(sale => sale.id)));
+    }
+  };
+
+  // Handlers for Bulk Delete
+  const handleConfirmBulkDelete = () => {
+    if(selectedSaleIds.size > 0) {
+        setIsConfirmBulkDeleteOpen(true);
+    }
+  };
+
+  const handleBulkDeleteSales = async () => {
+    if (selectedSaleIds.size === 0) return;
+
+    // FIX: Use v8-compatible syntax for batch writes.
+    const batch = db.batch();
+    selectedSaleIds.forEach(id => {
+        const saleRef = db.collection('DATA PENJUALAN').doc(id);
+        batch.delete(saleRef);
+    });
+    
+    await batch.commit();
+    setIsConfirmBulkDeleteOpen(false);
+    setSelectedSaleIds(new Set());
   };
 
   // Handlers for Target CRUD
@@ -334,24 +358,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const handleConfirmDeleteTarget = (target: Target) => { setTargetToDelete(target); setIsConfirmTargetDeleteOpen(true); };
   const handleDeleteTarget = async () => {
       if (targetToDelete) {
-          await deleteDoc(doc(db, 'TARGET BULANAN', targetToDelete.id));
+          // FIX: Use v8-compatible syntax for deleting a document.
+          await db.collection('TARGET BULANAN').doc(targetToDelete.id).delete();
           setIsConfirmTargetDeleteOpen(false);
           setTargetToDelete(null);
       }
   };
-
-  // Handlers for Pengurangan Jam Kerja CRUD
-  const handleAddPengurangan = () => { setPenguranganToEdit(null); setIsPenguranganModalOpen(true); };
-  const handleEditPengurangan = (p: PenguranganJamKerja) => { setPenguranganToEdit(p); setIsPenguranganModalOpen(true); };
-  const handleConfirmDeletePengurangan = (p: PenguranganJamKerja) => { setPenguranganToDelete(p); setIsConfirmPenguranganDeleteOpen(true); };
-  const handleDeletePengurangan = async () => {
-      if (penguranganToDelete) {
-          await deleteDoc(doc(db, 'PENGURANGAN_JAM_KERJA', penguranganToDelete.id));
-          setIsConfirmPenguranganDeleteOpen(false);
-          setPenguranganToDelete(null);
-      }
-  };
-
 
   const handleExportToPDF = () => {
     const doc = new jspdf.jsPDF();
@@ -406,7 +418,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Total Omset Bersih" value={`Rp ${totalOmset.toLocaleString('id-ID')}`} />
                 <StatCard title="Total Sesi Live" value={totalSesi.toLocaleString('id-ID')} />
-                <StatCard title="Rata-rata Omset / Sesi" value={`Rp ${rataRataOmset.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} />
+                <StatCard title="Rata-rata Omset / Hari" value={`Rp ${rataRataOmsetHarian.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} />
                 <StatCard title="Host Performa Terbaik" value={hostTerbaik} />
             </div>
             
@@ -432,7 +444,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 <SalesChart sales={filteredSales} hosts={hosts} />
             </div>
             
-            <HostSalesSummaryTable summaryData={hostSummaryData} salesData={filteredSales} penguranganData={penguranganJamKerja} />
+            <HostSalesSummaryTable summaryData={hostSummaryData} salesData={filteredSales} />
             <AccountSalesSummaryTable summaryData={accountSummaryData} />
 
             <div className="mt-8">
@@ -453,6 +465,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                       onEdit={handleEditSale}
                       onDelete={handleConfirmDeleteSale}
                       isCollapsible={true}
+                      selectedIds={selectedSaleIds}
+                      onSelectOne={handleSelectSale}
+                      onSelectAll={handleSelectAllSales}
                     />
                   </div>
                 )}
@@ -482,13 +497,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           <div className="flex flex-col gap-8">
             <HostManagement hosts={hosts} />
             <AccountManagement akun={akun} />
-            <PenguranganJamKerjaManagement 
-                penguranganList={penguranganJamKerjaWithHostName} 
-                hosts={hosts}
-                onAdd={handleAddPengurangan}
-                onEdit={handleEditPengurangan}
-                onDelete={handleConfirmDeletePengurangan}
-            />
           </div>
         );
       default:
@@ -567,6 +575,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             <h1 className="text-2xl font-bold text-white capitalize">{activePage === 'master' ? 'Data Master' : activePage}</h1>
             {activePage === 'penjualan' && (
               <div className="flex items-center space-x-2">
+                 {selectedSaleIds.size > 0 && (
+                    <button
+                        onClick={handleConfirmBulkDelete}
+                        className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-300 flex items-center transition-all"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Hapus ({selectedSaleIds.size})
+                    </button>
+                )}
                 <div className="relative" ref={exportMenuRef}>
                     <button onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 flex items-center">
                         Ekspor Data
@@ -605,6 +624,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         title="Hapus Data Penjualan"
         message="Apakah Anda yakin ingin menghapus data penjualan ini? Tindakan ini tidak dapat diurungkan."
       />
+       <ConfirmDeleteModal
+        isOpen={isConfirmBulkDeleteOpen}
+        onClose={() => setIsConfirmBulkDeleteOpen(false)}
+        onConfirm={handleBulkDeleteSales}
+        title={`Hapus ${selectedSaleIds.size} Data Penjualan`}
+        message="Apakah Anda yakin ingin menghapus semua data penjualan yang dipilih? Tindakan ini tidak dapat diurungkan."
+      />
       <TargetModal
         isOpen={isTargetModalOpen}
         onClose={() => setIsTargetModalOpen(false)}
@@ -616,19 +642,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         onConfirm={handleDeleteTarget}
         title="Hapus Target"
         message="Apakah Anda yakin ingin menghapus target ini?"
-      />
-      <PenguranganJamKerjaModal
-        isOpen={isPenguranganModalOpen}
-        onClose={() => setIsPenguranganModalOpen(false)}
-        penguranganToEdit={penguranganToEdit}
-        hosts={hosts}
-      />
-      <ConfirmDeleteModal
-        isOpen={isConfirmPenguranganDeleteOpen}
-        onClose={() => setIsConfirmPenguranganDeleteOpen(false)}
-        onConfirm={handleDeletePengurangan}
-        title="Hapus Pengurangan Jam Kerja"
-        message={`Apakah Anda yakin ingin menghapus catatan pengurangan ini untuk host ${penguranganToDelete?.hostName}?`}
       />
 
     </div>

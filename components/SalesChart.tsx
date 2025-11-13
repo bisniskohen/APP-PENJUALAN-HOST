@@ -26,7 +26,7 @@ const SalesChart: React.FC<SalesChartProps> = ({ sales, hosts }) => {
     return hosts.map(host => ({
       name: host.name,
       Omset: salesByHost[host.id] || 0,
-    }));
+    })).sort((a, b) => b.Omset - a.Omset); // Sort descending for better visualization
   }, [sales, hosts]);
   
   if (chartData.length === 0) {
@@ -34,17 +34,18 @@ const SalesChart: React.FC<SalesChartProps> = ({ sales, hosts }) => {
   }
 
   return (
-    <div style={{ width: '100%', height: 300 }}>
+    <div style={{ width: '100%', height: 350 }}>
       <ResponsiveContainer>
         <BarChart
+          layout="vertical"
           data={chartData}
           margin={{
             top: 5, right: 30, left: 20, bottom: 5,
           }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-          <XAxis dataKey="name" stroke="#94a3b8" />
-          <YAxis stroke="#94a3b8" tickFormatter={(value) => `Rp ${Number(value).toLocaleString('id-ID')}`} />
+          <XAxis type="number" stroke="#94a3b8" tickFormatter={(value) => `Rp ${Number(value).toLocaleString('id-ID')}`} />
+          <YAxis type="category" dataKey="name" stroke="#94a3b8" width={100} interval={0} />
           <Tooltip 
             contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#f1f5f9' }}
             cursor={{fill: 'rgba(71, 85, 105, 0.5)'}}

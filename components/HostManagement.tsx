@@ -1,6 +1,8 @@
 
+
 import React, { useState } from 'react';
-import { doc, deleteDoc } from 'firebase/firestore';
+// FIX: Use v8-compatible firestore methods by removing v9 modular imports.
+// import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { Host } from '../types';
 import HostModal from './HostModal';
@@ -41,7 +43,8 @@ const HostManagement: React.FC<HostManagementProps> = ({ hosts }) => {
         if (!hostToDelete) return;
         try {
             setError(null);
-            await deleteDoc(doc(db, 'HOST', hostToDelete.id));
+            // FIX: Use v8-compatible syntax for deleting a document.
+            await db.collection('HOST').doc(hostToDelete.id).delete();
             handleCloseConfirm();
         } catch (err: any) {
             setError('Gagal menghapus host. Mungkin masih ada data penjualan yang terkait.');
@@ -69,9 +72,6 @@ const HostManagement: React.FC<HostManagementProps> = ({ hosts }) => {
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
                                 Nama Host
                             </th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
-                                Durasi Wajib (Jam)
-                            </th>
                             <th scope="col" className="relative px-6 py-3">
                                 <span className="sr-only">Aksi</span>
                             </th>
@@ -81,7 +81,6 @@ const HostManagement: React.FC<HostManagementProps> = ({ hosts }) => {
                         {hosts.length > 0 ? hosts.map((host) => (
                             <tr key={host.id} className="hover:bg-slate-700/50">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{host.name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{host.durasiHarianWajib || 'N/A'} jam</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                     <button onClick={() => handleOpenModal(host)} className="text-indigo-400 hover:text-indigo-300">Edit</button>
                                     <button onClick={() => handleOpenConfirm(host)} className="text-red-500 hover:text-red-400">Hapus</button>
@@ -89,7 +88,7 @@ const HostManagement: React.FC<HostManagementProps> = ({ hosts }) => {
                             </tr>
                         )) : (
                             <tr>
-                                <td colSpan={3} className="text-center py-4 text-slate-400">Tidak ada host. Silakan tambahkan host baru.</td>
+                                <td colSpan={2} className="text-center py-4 text-slate-400">Tidak ada host. Silakan tambahkan host baru.</td>
                             </tr>
                         )}
                     </tbody>

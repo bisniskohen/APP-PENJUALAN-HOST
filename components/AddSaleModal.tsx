@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, Timestamp, doc, updateDoc } from 'firebase/firestore';
+// FIX: Use v8-compatible firebase for Timestamp and remove v9 modular imports.
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 import { db } from '../services/firebase';
 import { Host, Akun, Sale, Sesi } from '../types';
 
@@ -66,7 +68,8 @@ const SaleModal: React.FC<SaleModalProps> = ({ isOpen, onClose, hosts, akun, sal
     const saleData = {
         hostId,
         akunId,
-        saleDate: Timestamp.fromDate(new Date(saleDate)),
+        // FIX: Use v8-compatible Timestamp.
+        saleDate: firebase.firestore.Timestamp.fromDate(new Date(saleDate)),
         sesi,
         durasi,
         omsetAwal,
@@ -74,11 +77,12 @@ const SaleModal: React.FC<SaleModalProps> = ({ isOpen, onClose, hosts, akun, sal
     };
 
     try {
+      // FIX: Use v8-compatible syntax for document writes.
       if (isEditing) {
-        const saleRef = doc(db, 'DATA PENJUALAN', saleToEdit.id);
-        await updateDoc(saleRef, saleData);
+        const saleRef = db.collection('DATA PENJUALAN').doc(saleToEdit.id);
+        await saleRef.update(saleData);
       } else {
-        await addDoc(collection(db, 'DATA PENJUALAN'), saleData);
+        await db.collection('DATA PENJUALAN').add(saleData);
       }
       onClose();
     } catch (err: any) {

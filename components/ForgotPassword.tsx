@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
-import { sendPasswordResetEmail } from 'firebase/auth';
+// FIX: Use v8-compatible auth method
+// import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../services/firebase';
 
 interface ForgotPasswordProps {
@@ -18,7 +20,8 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onNavigateToLogin }) =>
     setMessage(null);
     setIsLoading(true);
     try {
-      await sendPasswordResetEmail(auth, email);
+      // FIX: Use auth.sendPasswordResetEmail (v8 compat) instead of sendPasswordResetEmail(auth,...) (v9 modular)
+      await auth.sendPasswordResetEmail(email);
       setMessage('Email pengaturan ulang kata sandi telah dikirim. Silakan periksa kotak masuk Anda.');
     } catch (err: any) {
       if (err.code === 'auth/user-not-found') {

@@ -1,5 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+// FIX: Use v8-compatible auth methods and types by importing firebase/compat/app
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
 import { auth } from './services/firebase';
 import { User } from './types';
 import Login from './components/Login';
@@ -16,7 +19,8 @@ const App: React.FC = () => {
   const [authView, setAuthView] = useState<AuthView>('login');
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+    // FIX: Use auth.onAuthStateChanged (v8 compat) instead of onAuthStateChanged(auth,...) (v9 modular) and use firebase.User for the type
+    const unsubscribe = auth.onAuthStateChanged((firebaseUser: firebase.User | null) => {
       if (firebaseUser) {
         setUser({ uid: firebaseUser.uid, email: firebaseUser.email });
       } else {

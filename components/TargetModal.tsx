@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+// FIX: Use v8-compatible firestore methods by removing v9 modular imports.
+// import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { Target } from '../types';
 
@@ -61,11 +62,12 @@ const TargetModal: React.FC<TargetModalProps> = ({ isOpen, onClose, targetToEdit
     };
 
     try {
+      // FIX: Use v8-compatible syntax for document writes.
       if (isEditing) {
-        const targetRef = doc(db, 'TARGET BULANAN', targetToEdit.id);
-        await updateDoc(targetRef, targetData);
+        const targetRef = db.collection('TARGET BULANAN').doc(targetToEdit.id);
+        await targetRef.update(targetData);
       } else {
-        await addDoc(collection(db, 'TARGET BULANAN'), targetData);
+        await db.collection('TARGET BULANAN').add(targetData);
       }
       onClose();
     } catch (err: any) {

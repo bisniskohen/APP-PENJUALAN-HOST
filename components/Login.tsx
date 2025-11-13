@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+// FIX: Use v8-compatible auth method, so signInWithEmailAndPassword is not needed from firebase/auth.
+// import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../services/firebase';
 
 interface LoginProps {
@@ -24,7 +26,8 @@ const Login: React.FC<LoginProps> = ({ onNavigateToSignUp, onNavigateToForgotPas
       return;
     }
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      // FIX: Use auth.signInWithEmailAndPassword (v8 compat) instead of signInWithEmailAndPassword(auth,...) (v9 modular)
+      await auth.signInWithEmailAndPassword(email, password);
     } catch (err: any) {
       if (err.code === 'auth/invalid-credential') {
         setError('Email atau password salah.');
@@ -40,7 +43,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateToSignUp, onNavigateToForgotPas
     <div className="flex items-center justify-center min-h-screen bg-slate-800">
       <div className="w-full max-w-md p-8 space-y-8 bg-slate-900 rounded-2xl shadow-2xl">
         <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-white">Selamat Datang</h2>
+          <h2 className="text-3xl font-extrabold text-white">PT BMS</h2>
           <p className="mt-2 text-sm text-slate-400">Masuk untuk mengakses dasbor Anda</p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>

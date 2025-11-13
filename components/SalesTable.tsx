@@ -6,9 +6,12 @@ interface SalesTableProps {
   onEdit: (sale: Sale) => void;
   onDelete: (sale: Sale) => void;
   isCollapsible?: boolean;
+  selectedIds: Set<string>;
+  onSelectOne: (id: string) => void;
+  onSelectAll: () => void;
 }
 
-const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete, isCollapsible = false }) => {
+const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete, isCollapsible = false, selectedIds, onSelectOne, onSelectAll }) => {
   
   if (sales.length === 0) {
     return <div className="text-center bg-slate-800/50 p-6 rounded-xl shadow-lg text-slate-400">Tidak ada data penjualan. Silakan tambahkan data baru.</div>;
@@ -22,13 +25,24 @@ const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete, isColl
             <table className="min-w-full divide-y divide-slate-700">
               <thead className="bg-slate-800">
                 <tr>
+                  <th scope="col" className="px-6 py-3">
+                    <label htmlFor="select-all-sales" className="sr-only">Select all sales</label>
+                    <input
+                        id="select-all-sales"
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-slate-500 bg-slate-700 text-indigo-600 focus:ring-indigo-500"
+                        checked={sales.length > 0 && selectedIds.size === sales.length}
+                        onChange={onSelectAll}
+                        aria-label="Pilih semua data di halaman ini"
+                    />
+                  </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Host</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Akun</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Tanggal</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Sesi</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Durasi</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Omset Bersih</th>
-                  <th scope="col" className="relative px-6 py-3">
+                  <th scope="col" className="relative px-6 py-3 text-right">
                     <span className="sr-only">Aksi</span>
                   </th>
                 </tr>
@@ -36,8 +50,19 @@ const SalesTable: React.FC<SalesTableProps> = ({ sales, onEdit, onDelete, isColl
               <tbody className="bg-slate-800/50 divide-y divide-slate-700">
                 {sales.map((sale) => {
                   const omsetBersih = (sale.omsetAkhir || 0) - (sale.omsetAwal || 0);
+                  const isSelected = selectedIds.has(sale.id);
                   return (
-                    <tr key={sale.id} className="hover:bg-slate-700/50">
+                    <tr key={sale.id} className={`transition-colors ${isSelected ? 'bg-slate-700/60' : 'hover:bg-slate-700/40'}`}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <label htmlFor={`select-sale-${sale.id}`} className="sr-only">{`Pilih data dari ${sale.hostName}`}</label>
+                        <input
+                            id={`select-sale-${sale.id}`}
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-slate-500 bg-slate-700 text-indigo-600 focus:ring-indigo-500"
+                            checked={isSelected}
+                            onChange={() => onSelectOne(sale.id)}
+                        />
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{sale.hostName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{sale.akunName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{new Date(sale.saleDate.seconds * 1000).toLocaleDateString('id-ID')}</td>
