@@ -37,6 +37,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [penguranganJamKerja, setPenguranganJamKerja] = useState<PenguranganJamKerja[]>([]);
   const [loading, setLoading] = useState(true);
   const [activePage, setActivePage] = useState<Page>('penjualan');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // State for Sales CRUD
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
@@ -517,10 +518,48 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
               <button onClick={() => setActivePage('master')} className={`px-3 py-2 rounded-md text-sm font-medium ${activePage === 'master' ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}>Data Master</button>
             </nav>
             <div className="flex items-center">
-              <button onClick={handleLogout} className="ml-4 px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white">Keluar</button>
+                {/* Desktop Logout Button */}
+                <button onClick={handleLogout} className="hidden md:block ml-4 px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white">Keluar</button>
+                
+                {/* Mobile Hamburger Button */}
+                <div className="md:hidden ml-1">
+                    <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    type="button"
+                    className="p-2 inline-flex items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                    aria-controls="mobile-menu"
+                    aria-expanded={isMobileMenuOpen}
+                    >
+                    <span className="sr-only">Buka menu utama</span>
+                    {isMobileMenuOpen ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    )}
+                    </button>
+                </div>
             </div>
           </div>
         </div>
+        {/* Mobile Menu Panel */}
+        {isMobileMenuOpen && (
+            <div className="md:hidden bg-slate-800" id="mobile-menu">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <button onClick={() => { setActivePage('penjualan'); setIsMobileMenuOpen(false); }} className={`w-full text-left block px-3 py-2 rounded-md text-base font-medium ${activePage === 'penjualan' ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}>Data Penjualan</button>
+                <button onClick={() => { setActivePage('target'); setIsMobileMenuOpen(false); }} className={`w-full text-left block px-3 py-2 rounded-md text-base font-medium ${activePage === 'target' ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}>Target</button>
+                <button onClick={() => { setActivePage('master'); setIsMobileMenuOpen(false); }} className={`w-full text-left block px-3 py-2 rounded-md text-base font-medium ${activePage === 'master' ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}>Data Master</button>
+            </div>
+            <div className="pt-3 pb-3 border-t border-slate-700">
+                <div className="px-2">
+                    <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white">Keluar</button>
+                </div>
+            </div>
+            </div>
+        )}
       </header>
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
