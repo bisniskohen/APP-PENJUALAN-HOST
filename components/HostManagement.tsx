@@ -69,6 +69,9 @@ const HostManagement: React.FC<HostManagementProps> = ({ hosts }) => {
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
                                 Nama Host
                             </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                                Durasi Wajib (Jam)
+                            </th>
                             <th scope="col" className="relative px-6 py-3">
                                 <span className="sr-only">Aksi</span>
                             </th>
@@ -78,6 +81,7 @@ const HostManagement: React.FC<HostManagementProps> = ({ hosts }) => {
                         {hosts.length > 0 ? hosts.map((host) => (
                             <tr key={host.id} className="hover:bg-slate-700/50">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{host.name}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{host.durasiHarianWajib || 'N/A'} jam</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                     <button onClick={() => handleOpenModal(host)} className="text-indigo-400 hover:text-indigo-300">Edit</button>
                                     <button onClick={() => handleOpenConfirm(host)} className="text-red-500 hover:text-red-400">Hapus</button>
@@ -85,7 +89,7 @@ const HostManagement: React.FC<HostManagementProps> = ({ hosts }) => {
                             </tr>
                         )) : (
                             <tr>
-                                <td colSpan={2} className="text-center py-4 text-slate-400">Tidak ada host. Silakan tambahkan host baru.</td>
+                                <td colSpan={3} className="text-center py-4 text-slate-400">Tidak ada host. Silakan tambahkan host baru.</td>
                             </tr>
                         )}
                     </tbody>

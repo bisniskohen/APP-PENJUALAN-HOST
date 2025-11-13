@@ -8,6 +8,7 @@ export interface User {
 export interface Host {
   id: string;
   name: string;
+  durasiHarianWajib: number;
 }
 
 export interface Akun {
@@ -36,4 +37,21 @@ export interface Target {
   month: number; // 1-12
   year: number;
   hadiah: string;
+}
+
+export interface PenguranganJamKerja {
+    id: string;
+    hostId: string;
+    hostName?: string;
+    tanggal: Timestamp;
+    jumlahJam: number;
+    keterangan: string;
+}
+
+// FIX: Add and export the missing 'DurasiWajib' interface.
+export interface DurasiWajib {
+  id: string;
+  month: number;
+  year: number;
+  durasiHarian: number;
 }

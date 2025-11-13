@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { Host } from '../types';
 
@@ -12,13 +12,20 @@ interface HostModalProps {
 
 const HostModal: React.FC<HostModalProps> = ({ isOpen, onClose, hostToEdit }) => {
   const [name, setName] = useState('');
+  const [durasiHarianWajib, setDurasiHarianWajib] = useState(8);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const isEditing = hostToEdit !== null;
 
   useEffect(() => {
     if (isOpen) {
-        setName(isEditing ? hostToEdit.name : '');
+        if (isEditing) {
+            setName(hostToEdit.name);
+            setDurasiHarianWajib(hostToEdit.durasiHarianWajib || 8);
+        } else {
+            setName('');
+            setDurasiHarianWajib(8);
+        }
         setError(null);
     }
   }, [isOpen, hostToEdit, isEditing]);
@@ -26,18 +33,19 @@ const HostModal: React.FC<HostModalProps> = ({ isOpen, onClose, hostToEdit }) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!name.trim()) {
-      setError('Nama host tidak boleh kosong.');
+    if (!name.trim() || durasiHarianWajib <= 0) {
+      setError('Nama host dan durasi wajib harus diisi dengan benar.');
       return;
     }
 
     setIsLoading(true);
     try {
+      const hostData = { name, durasiHarianWajib };
       if (isEditing) {
         const hostRef = doc(db, 'HOST', hostToEdit.id);
-        await updateDoc(hostRef, { name });
+        await updateDoc(hostRef, hostData);
       } else {
-        await addDoc(collection(db, 'HOST'), { name });
+        await addDoc(collection(db, 'HOST'), hostData);
       }
       onClose();
     } catch (err: any) {
@@ -70,6 +78,19 @@ const HostModal: React.FC<HostModalProps> = ({ isOpen, onClose, hostToEdit }) =>
                 required 
                 className="w-full bg-slate-700 border border-slate-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Masukkan nama host"
+            />
+          </div>
+          <div>
+            <label htmlFor="durasiHarianWajib" className="block text-sm font-medium text-slate-300 mb-1">Durasi Harian Wajib (Jam)</label>
+            <input 
+                type="number" 
+                id="durasiHarianWajib" 
+                value={durasiHarianWajib} 
+                onChange={e => setDurasiHarianWajib(parseInt(e.target.value, 10) || 0)} 
+                min="1"
+                required 
+                className="w-full bg-slate-700 border border-slate-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Contoh: 8"
             />
           </div>
 
